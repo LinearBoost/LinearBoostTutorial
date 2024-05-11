@@ -28,6 +28,8 @@ You can also have predict probabilities:
 
    >>> y_pred_proba = model.predict_proba(X_test)
 
+At the moment, the algorithm only supports binary classification. It also accepts only numeric features. Support for categorical features and multi-label classification are in future plans.
+
 Parameters
 ----------
 
