@@ -15,12 +15,16 @@ To use LinearBoost, first install it using pip:
 Quick Start
 -----------
 First, import linearboost in your project.
->>> from linearboost import LinearBoostClassifier
+.. code-block:: console
+
+   >>> from linearboost import LinearBoostClassifier
 
 Then, you can import an instance:
->>> model = LinearBoostClassifier()
->>> model.fit(X_train, y_train)
->>> y_pred = model.predict(X_test)
+.. code-block:: console
+   
+   >>> model = LinearBoostClassifier()
+   >>> model.fit(X_train, y_train)
+   >>> y_pred = model.predict(X_test)
 
 
 
