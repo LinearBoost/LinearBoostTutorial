@@ -45,7 +45,7 @@ The random state can also be set:
 
    >>> model = LinearBoostClassifier(random_state=42)
 
-And last, but not least, you can choose between two algorithms for boosting, SAMME and SAMME.R (see the  `documentation for scikit-learn <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html>` 
+And last, but not least, you can choose between two algorithms for boosting, SAMME and SAMME.R (see the `documentation for scikit-learn <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html>`_
 
    >>> model = LinearBoostClassifier(algorithm='SAMME')
    >>> model = LinearBoostClassifier(algorithm='SAMME.R')
