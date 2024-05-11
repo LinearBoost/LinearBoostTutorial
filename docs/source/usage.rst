@@ -18,29 +18,33 @@ First, import linearboost in your project.
 
    >>> from linearboost import LinearBoostClassifier
 
-Then, you can import an instance:
+Then, you can import an instance, and train it on your data.
    
    >>> model = LinearBoostClassifier()
    >>> model.fit(X_train, y_train)
    >>> y_pred = model.predict(X_test)
 
+You can also have predict probabilities:
 
+   >>> y_pred_proba = model.predict_proba(X_test)
 
+Parameters
+----------
 
-To retrieve a list of random ingredients,
-you can use the ``lumache.get_random_ingredients()`` function:
+You can initialize the model with parameters. The main parameter is the number of estimators. As the model converges faster than similar methods, you generally need less estimators.
 
-.. autofunction:: lumache.get_random_ingredients
+   >>> model = LinearBoostClassifier(n_estimators=5)
 
-The ``kind`` parameter should be either ``"meat"``, ``"fish"``,
-or ``"veggies"``. Otherwise, :py:func:`lumache.get_random_ingredients`
-will raise an exception.
+You can also set learning rate:
 
-.. autoexception:: lumache.InvalidKindError
+   >>> model = LinearBoostClassifier(learning_rate=0.5)
 
-For example:
+The random state can also be set:
 
->>> import lumache
->>> lumache.get_random_ingredients()
-['shells', 'gorgonzola', 'parsley']
+   >>> model = LinearBoostClassifier(random_state=42)
+
+And last, but not least, you can choose between two algorithms for boosting, SAMME and SAMME.R (see the  `documentation for scikit-learn <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html>` 
+
+   >>> model = LinearBoostClassifier(algorithm='SAMME')
+   >>> model = LinearBoostClassifier(algorithm='SAMME.R')
 
