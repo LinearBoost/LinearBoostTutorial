@@ -2,9 +2,9 @@
 
 # -- Project information
 
-project = 'Lumache'
-copyright = '2021, Graziella'
-author = 'Graziella'
+project = 'LinearBoost'
+copyright = '2024, Hamidreza Keshavarz & Reza Rawassizadeh'
+author = 'Hamidreza Keshavarz'
 
 release = '0.1'
 version = '0.1.0'
