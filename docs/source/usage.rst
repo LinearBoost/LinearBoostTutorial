@@ -6,14 +6,24 @@ Usage
 Installation
 ------------
 
-To use Lumache, first install it using pip:
+To use LinearBoost, first install it using pip:
 
 .. code-block:: console
 
-   (.venv) $ pip install lumache
+   (.venv) $ pip install linearboost
 
-Creating recipes
-----------------
+Quick Start
+-----------
+First, import linearboost in your project.
+>>> from linearboost import LinearBoostClassifier
+
+Then, you can import an instance:
+>>> model = LinearBoostClassifier()
+>>> model.fit(X_train, y_train)
+>>> y_pred = model.predict(X_test)
+
+
+
 
 To retrieve a list of random ingredients,
 you can use the ``lumache.get_random_ingredients()`` function:
