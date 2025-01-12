@@ -45,6 +45,10 @@ The random state can also be set:
 
    >>> model = LinearBoostClassifier(random_state=42)
 
+As the SEFR classifier should only get non-negative values, we should scale the data before handing them to SEFR. Here, you have a set of scalers to choose from. They 'quantile-uniform' and 'quantile-normal' (corresponding to QuantileTransformer), 'normalizer-l1', 'normalizer-l2', and 'normalizer-max' (corresponding to Normalizer and the norm), 'standard' (corresponding to Standard Scaler), 'power' (corresponding to PowerTransformer with yeo-johnson method), 'maxabs' (corresponding to MaxAbsScaler), and 'robust' (corresponding to RobustScaler).
+
+   >>> model = LinearBoostClassifier(scaler="quantile-uniform")
+
 And last, but not least, you can choose between two algorithms for boosting, SAMME and SAMME.R (see the `documentation for scikit-learn <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html>`_).
 
    >>> model = LinearBoostClassifier(algorithm='SAMME')
