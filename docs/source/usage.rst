@@ -49,6 +49,18 @@ As the SEFR classifier should only get non-negative values, we should scale the 
 
    >>> model = LinearBoostClassifier(scaler="quantile-uniform")
 
+You also have the option to add class weights as a dict:
+
+   >>> model = LinearBoostClassifier(class_weight={0: 2.0, 1: 1.0})
+
+or make the algorithm do it for you based on the class imbalance:
+
+   >>> model = LinearBoostClassifier(class_weight="balanced")
+
+You can define your own loss function as well and give it to the algorithm.
+
+   >>> model = LinearBoostClassifier(loss_function=my_loss_function)
+
 And last, but not least, you can choose between two algorithms for boosting, SAMME and SAMME.R (see the `documentation for scikit-learn <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html>`_).
 
    >>> model = LinearBoostClassifier(algorithm='SAMME')
