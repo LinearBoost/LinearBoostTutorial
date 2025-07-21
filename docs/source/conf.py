@@ -3,11 +3,11 @@
 # -- Project information
 
 project = 'LinearBoost'
-copyright = '2024, Hamidreza Keshavarz & Reza Rawassizadeh'
+copyright = '2025, Hamidreza Keshavarz & Reza Rawassizadeh'
 author = 'Hamidreza Keshavarz'
 
 release = '0.1'
-version = '0.1.0'
+version = '0.1.3'
 
 # -- General configuration
 
