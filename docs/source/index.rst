@@ -1,5 +1,5 @@
 Welcome to LinearBoost's documentation!
-===================================
+======================================
 
 **LinearBoost** is a Python library for classification in machine learning. It is built by boosting a linear classifier, named SEFR. SEFR is the building block for LinearBoost. It is very fast, but not as accurate as state-of-the-art classification algorithms. LinearBoost builds on SEFR by improving its accuracy and taking advantage of its training runtime. 
 
@@ -16,5 +16,7 @@ Contents
 --------
 
 .. toctree::
+   :maxdepth: 2
 
    usage
+   api

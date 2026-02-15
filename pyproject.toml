@@ -1,8 +1,14 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
 [project]
-name = "lumache"
-authors = [{name = "Graziella", email = "graziella@lumache"}]
-dynamic = ["version", "description"]
+name = "linearboost-tutorial"
+version = "0.1.7"
+description = "Documentation and tutorial for LinearBoost classifier"
+readme = "README.rst"
+authors = [
+    { name = "Hamidreza Keshavarz", email = "hamid9@outlook.com" },
+    { name = "Reza Rawassizadeh", email = "rezar@bu.edu" },
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/LinearBoost/linearboost-classifier"
+Documentation = "https://linearboost.readthedocs.io"

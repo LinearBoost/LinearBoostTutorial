@@ -1,202 +1,299 @@
 Usage Guide
 ===========
 
-This guide provides a comprehensive overview of the `LinearBoostClassifier`, from basic setup to advanced features.
+This guide covers **LinearBoostClassifier** and the base estimator **SEFR** from installation through advanced options, aligned with the current implementation in ``linear_boost.py`` and ``sefr.py``.
 
 .. _installation:
 
 Installation
 ------------
 
-First, install the LinearBoost library using pip. It's recommended to do this within a virtual environment.
+Install the **linearboost** package (and optionally use a virtual environment):
 
 .. code-block:: console
 
-   (.venv) $ pip install linearboost
+   pip install linearboost
+
+Requirements: Python >= 3.8, scikit-learn >= 1.2.2.
 
 ---
 
 A Complete Example
 ------------------
 
-Let's walk through a full example, from generating synthetic data to training the model and evaluating its performance. This demonstrates the standard workflow.
+Basic workflow: load or generate data, split, fit **LinearBoostClassifier**, and evaluate.
 
 .. code-block:: python
 
    from linearboost import LinearBoostClassifier
    from sklearn.datasets import make_classification
    from sklearn.model_selection import train_test_split
-   from sklearn.metrics import accuracy_score
+   from sklearn.metrics import accuracy_score, f1_score
 
-   # 1. Generate a synthetic dataset
-   # X will have 20 features, y will be binary {0, 1}
    X, y = make_classification(
        n_samples=1000,
        n_features=20,
        n_informative=10,
        n_redundant=5,
-       random_state=42
+       random_state=42,
    )
 
-   # 2. Split data into training and testing sets
    X_train, X_test, y_train, y_test = train_test_split(
        X, y, test_size=0.2, random_state=42
    )
 
-   # 3. Initialize and train the LinearBoostClassifier
-   # We'll use the default parameters for this first example
    clf = LinearBoostClassifier()
    clf.fit(X_train, y_train)
 
-   # 4. Make predictions on the test set
    y_pred = clf.predict(X_test)
+   print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+   print(f"F1 (weighted): {f1_score(y_test, y_pred, average='weighted'):.4f}")
 
-   # 5. Evaluate the model's accuracy
-   accuracy = accuracy_score(y_test, y_pred)
-   print(f"Model Accuracy: {accuracy:.4f}")
-   # Expected output: Model Accuracy: 0.8800 or similar
-
-   # You can also predict probabilities
    y_proba = clf.predict_proba(X_test)
-   print("Probability estimates for the first 2 samples:")
+   print("Probability estimates for first 2 samples:")
    print(y_proba[:2])
 
 ---
 
-Key Parameters in Detail
-------------------------
+Key Parameters (LinearBoostClassifier)
+--------------------------------------
 
-The power of `LinearBoostClassifier` lies in its customizable parameters. Understanding them is key to tuning the model for your specific dataset.
+Parameters below match the current API. See :doc:`api` for the full signature and attributes.
 
-### Boosting Parameters
+Boosting type and algorithm
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These parameters control the core AdaBoost algorithm.
+- **boosting_type** : `{'adaboost', 'gradient'}`, default=`'adaboost'`
+  - ``'adaboost'``: Classic AdaBoost (SAMME or SAMME.R) that reweights samples by classification error.
+  - ``'gradient'``: Gradient boosting; each base estimator fits pseudo-residuals (negative gradient of log-loss). Often better for highly non-linear or XOR-like patterns. When using ``'gradient'``, the **algorithm** parameter is ignored.
 
--   **n_estimators** : `int`, default=`200`
-    This is the maximum number of `SEFR` estimators to train in sequence. Boosting will stop early if a perfect fit is achieved. A larger number of estimators can lead to a more complex model but also risks overfitting.
+- **algorithm** : `{'SAMME', 'SAMME.R'}`, default=`'SAMME.R'`
+  Used only when **boosting_type='adaboost'**. ``'SAMME.R'`` typically converges faster and achieves lower test error with fewer iterations. ``'SAMME'`` is the discrete variant.
 
--   **learning_rate** : `float`, default=`1.0`
-    This parameter shrinks the contribution of each classifier. There is a **trade-off** between `learning_rate` and `n_estimators`: a lower learning rate requires more estimators to achieve the same level of performance but can lead to better generalization. Values are typically between `0.0` and `1.0`.
+- **n_estimators** : `int`, default=`200`
+  Maximum number of base SEFR estimators. With **early_stopping=True** you can set a larger value (e.g. 500) and let training stop when validation score does not improve.
 
--   **algorithm** : `{'SAMME', 'SAMME.R'}`, default=`'SAMME.R'`
-    This specifies the AdaBoost variant to use.
-    -   `'SAMME.R'` requires the base estimator to have a `predict_proba` method. It typically converges faster and achieves a lower test error with fewer boosting iterations. Since the base `SEFR` estimator supports probability prediction, **'SAMME.R' is the recommended and default choice**.
-    -   `'SAMME'` is a discrete version that can be used with classifiers that don't predict probabilities.
+- **learning_rate** : `float`, default=`1.0`
+  Shrinks the contribution of each estimator. There is a trade-off with **n_estimators**: lower learning rate usually needs more estimators but can improve generalization.
 
-### Data Scaling
+Regularization and early stopping
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`LinearBoostClassifier` automatically scales your data. You just need to choose the method.
+- **subsample** : `float`, default=`1.0`
+  Fraction of samples used to fit each base estimator. Values in (0, 1] enable stochastic boosting (e.g. ``0.8``) and can reduce variance.
 
--   **scaler** : `str`, default=`'minmax'`
-    Specifies which scikit-learn scaler to apply. The data is first transformed by the chosen scaler and then by a `MinMaxScaler` to ensure all values are in the `[0, 1]` range required by the base `SEFR` estimator.
-    -   `'minmax'`: Best for standard data without significant outliers.
-    -   `'standard'`: Centers data to have a mean of 0 and a standard deviation of 1. Good for data that follows a Gaussian distribution.
-    -   `'robust'`: Uses medians and quartiles, making it robust to outliers. Use this if your dataset contains significant anomalies.
-    -   `'quantile-uniform'` or `'quantile-normal'`: Non-linear transformations that can help spread out concentrated values and handle non-Gaussian distributions.
-    -   `'power'`: Applies a power transformation to make data more Gaussian-like.
-    -   Others include `'normalizer-l1'`, `'normalizer-l2'`, `'maxabs'`.
+- **shrinkage** : `float`, default=`1.0`
+  Multiplier for each estimator’s weight. Values in (0, 1] (e.g. ``0.8--0.95``) reduce overfitting and can improve generalization.
 
-### Handling Imbalanced Data
+- **early_stopping** : `bool`, default=`False`
+  If ``True``, training stops when validation score does not improve for **n_iter_no_change** consecutive iterations. Requires **n_iter_no_change** to be set.
 
--   **class_weight** : `dict`, `list of dicts`, or `'balanced'`, default=`None`
-    Use this parameter to give more importance to under-represented classes.
-    -   `'balanced'`: Automatically adjusts weights to be inversely proportional to class frequencies. For a dataset with 75 samples of class 0 and 25 of class 1, it would implicitly use weights like `{0: 0.67, 1: 2.0}`.
-    -   `{0: 1, 1: 10}`: Manually sets the weight for class 1 to be 10 times that of class 0.
+- **validation_fraction** : `float`, default=`0.1`
+  Fraction of training data used as validation for early stopping. Only used when **early_stopping=True** and **subsample >= 1.0**. When **subsample < 1.0**, out-of-bag (OOB) evaluation is used instead and this parameter is ignored.
 
-### Non-linear Classification with Kernels
+- **n_iter_no_change** : `int`, default=`5`
+  Number of iterations with no improvement to wait before stopping (when **early_stopping=True**).
 
-These parameters are passed to the underlying `SEFR` estimator to enable it to learn non-linear decision boundaries using the "kernel trick".
+- **tol** : `float`, default=`1e-4`
+  Minimum improvement in score to count as “improvement” for early stopping.
 
--   **kernel** : `{'linear', 'poly', 'rbf', 'sigmoid'}`, default=`'linear'`
-    -   `'linear'`: Creates a standard linear separator. Fast and effective for linearly separable data.
-    -   `'rbf'` (Radial Basis Function): A powerful and popular choice for capturing complex, non-linear patterns. Its flexibility is controlled by `gamma`.
-    -   `'poly'`: Can find polynomial decision boundaries. Its complexity is controlled by `degree`.
--   **gamma** : `float`, default=`None` (interpreted as `1 / n_features`)
-    Kernel coefficient for `'rbf'` and `'poly'`. It defines how much influence a single training example has. A low `gamma` value creates a smooth, broad decision boundary, while a high `gamma` value creates a more complex, tight-fitting boundary that can lead to overfitting.
--   **degree** : `int`, default=`3`
-    The degree of the polynomial for the `'poly'` kernel.
--   **coef0** : `float`, default=`1`
-    An independent term in the `'poly'` and `'sigmoid'` kernels.
+Data scaling
+~~~~~~~~~~~~
+
+- **scaler** : `str`, default=`'minmax'`
+  Scaling applied before training. When ``scaler != 'minmax'``, the pipeline is: chosen scaler → **MinMaxScaler** (so SEFR always sees values in a bounded range). Options include:
+  - ``'minmax'``: MinMaxScaler only.
+  - ``'standard'``, ``'robust'``, ``'quantile-uniform'``, ``'quantile-normal'``.
+  - ``'normalizer-l1'``, ``'normalizer-l2'``, ``'normalizer-max'``, ``'power'``, ``'maxabs'``.
+
+The fitted transformer is available as **scaler_** (a pipeline when scaler is not ``'minmax'``).
+
+Imbalanced data and custom loss
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **class_weight** : `dict`, `'balanced'`, or `None`, default=`None`
+  Class weights. Use ``'balanced'`` to weight inversely to class frequencies. Can be combined with **sample_weight** in ``fit()``.
+
+- **loss_function** : callable or `None`, default=`None`
+  Optional custom loss with signature ``(y_true, y_pred, sample_weight) -> float`` for optimization.
+
+Kernels and kernel approximation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **kernel** : `{'linear', 'poly', 'rbf', 'sigmoid'}` or callable, default=`'linear'`
+  - ``'linear'``: No kernel; fastest, for linearly separable data.
+  - ``'rbf'``: Radial basis function; flexible for non-linear boundaries.
+  - ``'poly'``: Polynomial; complexity controlled by **degree**.
+  - ``'sigmoid'``: Sigmoid kernel.
+
+- **gamma** : `float` or `None`, default=`None`
+  Kernel coefficient for ``'rbf'``, ``'poly'``, ``'sigmoid'``. If ``None``, set to ``1 / n_features``.
+
+- **degree** : `int`, default=`3`
+  Degree for ``'poly'`` kernel.
+
+- **coef0** : `float`, default=`1`
+  Independent term in ``'poly'`` and ``'sigmoid'`` kernels.
+
+- **kernel_approx** : `{'rff', 'nystrom'}` or `None`, default=`None`
+  For large datasets with non-linear **kernel**, use approximation to avoid an O(n²) Gram matrix:
+  - ``'rff'``: Random Fourier Features; only valid for **kernel='rbf'**.
+  - ``'nystrom'``: Nyström approximation; works with ``'rbf'``, ``'poly'``, ``'sigmoid'``.
+  - ``None``: Exact kernel (full Gram matrix).
+
+- **n_components** : `int`, default=`256`
+  Dimensionality of the kernel feature map when **kernel_approx** is used (number of random features for ``'rff'``, rank for ``'nystrom'``).
+
+---
+
+Examples by feature
+--------------------
+
+Non-linear kernel (exact)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   # Example using a non-linear RBF kernel for complex data
    model = LinearBoostClassifier(
-       kernel='rbf',
-       gamma=0.1,         # Custom gamma value
+       kernel="rbf",
+       gamma=0.1,
        n_estimators=100,
-       learning_rate=0.5
+       learning_rate=0.5,
    )
+   model.fit(X_train, y_train)
+
+Kernel approximation (scalable)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   model = LinearBoostClassifier(
+       kernel="rbf",
+       kernel_approx="rff",
+       n_components=256,
+       n_estimators=100,
+   )
+   model.fit(X_train, y_train)
+
+Gradient boosting
+~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   model = LinearBoostClassifier(
+       boosting_type="gradient",
+       kernel="rbf",
+       n_estimators=200,
+   )
+   model.fit(X_train, y_train)
+
+Early stopping with validation split
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   model = LinearBoostClassifier(
+       n_estimators=500,
+       early_stopping=True,
+       validation_fraction=0.1,
+       n_iter_no_change=5,
+       tol=1e-4,
+   )
+   model.fit(X_train, y_train)
+
+Early stopping with OOB (when using subsampling)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   model = LinearBoostClassifier(
+       n_estimators=500,
+       subsample=0.8,
+       early_stopping=True,
+       n_iter_no_change=5,
+   )
+   model.fit(X_train, y_train)
+
+Imbalanced data
+~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   model = LinearBoostClassifier(class_weight="balanced", n_estimators=200)
    model.fit(X_train, y_train)
 
 ---
 
-Advanced Usage
---------------
+Using SEFR standalone
+----------------------
 
-### Inspecting the Fitted Model
-
-After fitting, you can inspect the model's attributes to understand its components.
+**SEFR** is the base binary linear classifier. You can use it alone for a very fast, lightweight model. It supports **fit_intercept**, **kernel** (linear, poly, rbf, sigmoid, precomputed), and **gamma**, **degree**, **coef0**.
 
 .. code-block:: python
 
-   # Assuming 'clf' is a fitted LinearBoostClassifier
-   print(f"Number of estimators trained: {len(clf.estimators_)}")
+   from linearboost import SEFR
 
-   # Weights of each estimator in the ensemble
+   clf = SEFR(kernel="rbf", fit_intercept=True)
+   clf.fit(X_train, y_train)
+   clf.predict(X_test)
+   clf.score(X_test, y_test)
+
+See :doc:`api` for SEFR’s full parameters and attributes.
+
+---
+
+Advanced usage
+--------------
+
+Inspecting the fitted model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   print(f"Number of estimators: {len(clf.estimators_)}")
    print(f"Estimator weights: {clf.estimator_weights_}")
-
-   # Classification error for each estimator
    print(f"Estimator errors: {clf.estimator_errors_}")
-
-   # The fitted scaler object can be inspected or used
    print(f"Fitted scaler: {clf.scaler_}")
 
-   # You can use the fitted scaler to transform new data independently
-   X_new_transformed = clf.scaler_.transform(X_test)
+   # Transform new data with the same scaling
+   X_new_scaled = clf.scaler_.transform(X_test)
 
-### Hyperparameter Tuning with GridSearchCV
+When **boosting_type='gradient'**, the raw scores and initial score are in **F_** and **init_score_** (if present).
 
-`LinearBoostClassifier` is compatible with the scikit-learn ecosystem, so you can use tools like `GridSearchCV` to find the best parameters.
+Hyperparameter tuning with GridSearchCV
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
    from sklearn.model_selection import GridSearchCV
 
-   # Define the parameter grid to search
    param_grid = {
-       'n_estimators': [50, 100, 200],
-       'learning_rate': [0.1, 0.5, 1.0],
-       'kernel': ['linear', 'rbf'],
-       'scaler': ['standard', 'robust']
+       "n_estimators": [50, 100, 200],
+       "learning_rate": [0.1, 0.5, 1.0],
+       "kernel": ["linear", "rbf"],
+       "scaler": ["minmax", "robust"],
+       "boosting_type": ["adaboost", "gradient"],
    }
 
-   # Initialize the classifier and the grid search
    lbc = LinearBoostClassifier()
-   grid_search = GridSearchCV(estimator=lbc, param_grid=param_grid, cv=3, n_jobs=-1, verbose=2)
+   grid = GridSearchCV(estimator=lbc, param_grid=param_grid, cv=3, n_jobs=-1, verbose=2)
+   grid.fit(X_train, y_train)
 
-   # Fit the grid search to the data
-   grid_search.fit(X_train, y_train)
-
-   # Print the best parameters found
-   print(f"Best parameters found: {grid_search.best_params_}")
-
-   # The best estimator is already fitted and can be used directly
-   best_model = grid_search.best_estimator_
-   accuracy = best_model.score(X_test, y_test)
-   print(f"Tuned Model Accuracy: {accuracy:.4f}")
+   print(grid.best_params_)
+   best_model = grid.best_estimator_
+   print(f"Test accuracy: {best_model.score(X_test, y_test):.4f}")
 
 ---
 
 Limitations
 -----------
 
--   **Binary Classification Only**: The current version is designed exclusively for two-class problems.
--   **Numeric Features Only**: The input features (`X`) must be numeric. Categorical features need to be encoded (e.g., via one-hot encoding) before being passed to the model.
+- **Binary classification only**: Both LinearBoostClassifier and SEFR support only two-class targets.
+- **Numeric features only**: Input ``X`` must be numeric. Encode categorical features (e.g. one-hot) before use.
 
 ---
 
 Feedback
 --------
 
-For more details, please refer to the [GitHub Repo](https://github.com/LinearBoost/linearboost-classifier). We welcome contributions, issues, and suggestions!
+For more details and source code, see the `LinearBoost GitHub repository <https://github.com/LinearBoost/linearboost-classifier>`_. We welcome issues, contributions, and suggestions.
